@@ -1,7 +1,5 @@
-use std::fmt::Write as _;
 use std::str::FromStr;
 
-use alloy::signers::local::PrivateKeySigner;
 use anyhow::{Context, Result, bail};
 use clap::{Args, Subcommand};
 use polymarket_client_sdk::auth::LocalSigner;
@@ -82,22 +80,12 @@ fn guard_overwrite(force: bool) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn signer_key_hex(signer: &PrivateKeySigner) -> String {
-    let bytes = signer.credential().to_bytes();
-    let mut hex = String::with_capacity(2 + bytes.len() * 2);
-    hex.push_str("0x");
-    for b in &bytes {
-        write!(hex, "{b:02x}").unwrap();
-    }
-    hex
-}
-
 fn cmd_create(output: OutputFormat, force: bool, signature_type: &str) -> Result<()> {
     guard_overwrite(force)?;
 
     let signer = LocalSigner::random().with_chain_id(Some(POLYGON));
     let address = signer.address();
-    let key_hex = signer_key_hex(&signer);
+    let key_hex = format!("{:#x}", signer.to_bytes());
 
     config::save_wallet(&key_hex, POLYGON, signature_type)?;
     let config_path = config::config_path()?;
@@ -138,7 +126,7 @@ fn cmd_import(key: &str, output: OutputFormat, force: bool, signature_type: &str
         .context("Invalid private key")?
         .with_chain_id(Some(POLYGON));
     let address = signer.address();
-    let key_hex = signer_key_hex(&signer);
+    let key_hex = format!("{:#x}", signer.to_bytes());
 
     config::save_wallet(&key_hex, POLYGON, signature_type)?;
     let config_path = config::config_path()?;

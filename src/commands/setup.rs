@@ -6,7 +6,6 @@ use polymarket_client_sdk::auth::{LocalSigner, Signer as _};
 use polymarket_client_sdk::types::Address;
 use polymarket_client_sdk::{POLYGON, derive_proxy_wallet};
 
-use super::wallet::signer_key_hex;
 use crate::config;
 
 fn print_banner() {
@@ -117,12 +116,12 @@ fn setup_wallet() -> Result<Address> {
         let signer = LocalSigner::from_str(&key)
             .context("Invalid private key")?
             .with_chain_id(Some(POLYGON));
-        let hex = signer_key_hex(&signer);
+        let hex = format!("{:#x}", signer.to_bytes());
         (signer.address(), hex)
     } else {
         let signer = LocalSigner::random().with_chain_id(Some(POLYGON));
         let address = signer.address();
-        let hex = signer_key_hex(&signer);
+        let hex = format!("{:#x}", signer.to_bytes());
         (address, hex)
     };
 
