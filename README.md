@@ -488,6 +488,10 @@ src/
   output/        -- Table and JSON rendering per command group
 ```
 
+## Lessons Learned
+
+- [Postmortem: Proxy Wallet Address Mismatch](docs/postmortem-proxy-wallet-mismatch.md) — Why `--signature-type gnosis-safe` matters for website-created accounts, and how a wrong default led to a multi-hour fork that turned out to be unnecessary.
+
 ## License
 
 MIT
