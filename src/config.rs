@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 const ENV_VAR: &str = "POLYMARKET_PRIVATE_KEY";
 const SIG_TYPE_ENV_VAR: &str = "POLYMARKET_SIGNATURE_TYPE";
+const FUNDER_ENV_VAR: &str = "POLYMARKET_FUNDER";
 pub(crate) const DEFAULT_SIGNATURE_TYPE: &str = "proxy";
 
 pub(crate) const NO_WALLET_MSG: &str =
@@ -17,6 +18,8 @@ pub(crate) struct Config {
     pub chain_id: u64,
     #[serde(default = "default_signature_type")]
     pub signature_type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub funder: Option<String>,
 }
 
 fn default_signature_type() -> String {
@@ -94,7 +97,32 @@ pub fn resolve_signature_type(cli_flag: Option<&str>) -> Result<String> {
     Ok(DEFAULT_SIGNATURE_TYPE.to_string())
 }
 
+/// Priority: CLI flag > env var > config file > None.
+pub fn resolve_funder(cli_flag: Option<&str>) -> Result<Option<String>> {
+    if let Some(f) = cli_flag {
+        return Ok(Some(f.to_string()));
+    }
+    if let Ok(f) = std::env::var(FUNDER_ENV_VAR)
+        && !f.is_empty()
+    {
+        return Ok(Some(f));
+    }
+    if let Some(config) = load_config()? {
+        return Ok(config.funder);
+    }
+    Ok(None)
+}
+
 pub fn save_wallet(key: &str, chain_id: u64, signature_type: &str) -> Result<()> {
+    save_wallet_with_funder(key, chain_id, signature_type, None)
+}
+
+pub fn save_wallet_with_funder(
+    key: &str,
+    chain_id: u64,
+    signature_type: &str,
+    funder: Option<&str>,
+) -> Result<()> {
     let dir = config_dir()?;
     fs::create_dir_all(&dir).context("Failed to create config directory")?;
 
@@ -108,6 +136,7 @@ pub fn save_wallet(key: &str, chain_id: u64, signature_type: &str) -> Result<()>
         private_key: key.to_string(),
         chain_id,
         signature_type: signature_type.to_string(),
+        funder: funder.map(String::from),
     };
     let json = serde_json::to_string_pretty(&config)?;
     let path = config_path()?;

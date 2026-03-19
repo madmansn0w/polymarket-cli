@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use polymarket_client_sdk::auth::state::Authenticated;
 use polymarket_client_sdk::auth::{LocalSigner, Normal, Signer as _};
 use polymarket_client_sdk::clob::types::SignatureType;
+use polymarket_client_sdk::types::Address;
 use polymarket_client_sdk::{POLYGON, clob};
 
 use crate::config;
@@ -36,20 +37,30 @@ pub fn resolve_signer(
 pub async fn authenticated_clob_client(
     private_key: Option<&str>,
     signature_type_flag: Option<&str>,
+    funder_flag: Option<&str>,
 ) -> Result<clob::Client<Authenticated<Normal>>> {
     let signer = resolve_signer(private_key)?;
-    authenticate_with_signer(&signer, signature_type_flag).await
+    authenticate_with_signer(&signer, signature_type_flag, funder_flag).await
 }
 
 pub async fn authenticate_with_signer(
     signer: &(impl polymarket_client_sdk::auth::Signer + Sync),
     signature_type_flag: Option<&str>,
+    funder_flag: Option<&str>,
 ) -> Result<clob::Client<Authenticated<Normal>>> {
     let sig_type = parse_signature_type(&config::resolve_signature_type(signature_type_flag)?);
+    let funder_addr = config::resolve_funder(funder_flag)?;
 
-    clob::Client::default()
+    let mut builder = clob::Client::default()
         .authentication_builder(signer)
-        .signature_type(sig_type)
+        .signature_type(sig_type);
+
+    if let Some(ref addr) = funder_addr {
+        let address = Address::from_str(addr).context("invalid funder address")?;
+        builder = builder.funder(address);
+    }
+
+    builder
         .authenticate()
         .await
         .context("Failed to authenticate with Polymarket CLOB")

@@ -26,6 +26,10 @@ pub(crate) struct Cli {
     /// Signature type: eoa, proxy, or gnosis-safe
     #[arg(long, global = true)]
     signature_type: Option<String>,
+
+    /// Funder/proxy wallet address (overrides auto-derived proxy)
+    #[arg(long, global = true)]
+    funder: Option<String>,
 }
 
 #[derive(Subcommand)]
@@ -105,6 +109,7 @@ pub(crate) async fn run(cli: Cli) -> anyhow::Result<()> {
                 cli.output,
                 cli.private_key.as_deref(),
                 cli.signature_type.as_deref(),
+                cli.funder.as_deref(),
             )
             .await
         }
@@ -114,7 +119,8 @@ pub(crate) async fn run(cli: Cli) -> anyhow::Result<()> {
         Commands::Data(args) => commands::data::execute(&data, args, cli.output).await,
         Commands::Bridge(args) => commands::bridge::execute(&bridge, args, cli.output).await,
         Commands::Wallet(args) => {
-            commands::wallet::execute(args, cli.output, cli.private_key.as_deref())
+            commands::wallet::execute(args, cli.output, cli.private_key.as_deref(), cli.funder.as_deref())
+                .await
         }
         Commands::Upgrade => commands::upgrade::execute(),
         Commands::Status => {

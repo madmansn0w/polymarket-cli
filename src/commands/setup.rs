@@ -155,6 +155,10 @@ fn finish_setup(address: Address) -> Result<()> {
             println!("  ✓ Proxy wallet derived");
             println!("    Proxy: {proxy}");
             println!("    Deposit USDC to this address to start trading.");
+            println!();
+            println!("  NOTE: If you created your account on polymarket.com,");
+            println!("    run `polymarket wallet sync` to auto-resolve your");
+            println!("    actual proxy wallet from the Polymarket profile API.");
         }
         None => {
             println!("  ✗ Could not derive proxy wallet");
